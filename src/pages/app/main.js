@@ -1,11 +1,14 @@
 import Vue from 'vue'
-import Login from './login.vue'
+import App from './App.vue'
+import router from './router'
 import '../../static/js/element.js'
+import '../../static/css/jacky.css'
 import VueResource from 'vue-resource'
 Vue.use(VueResource)
+
 Vue.config.productionTip = false
 
 new Vue({
-  // router,
-  render: h => h(Login)
-}).$mount('#system-login')
+  router,
+  render: h => h(App)
+}).$mount('#app')

@@ -2,7 +2,7 @@
 	<div id="system-header">
 		<el-container>
 			<el-header style="text-align: left;">
-				<el-image style="width: 25px;height: 25px;vertical-align: middle;margin-bottom: 5px;" :src="require('../../assets/logo3.png')"></el-image>				
+				<el-image style="width: 25px;height: 25px;vertical-align: middle;margin-bottom: 5px;" :src="require('../../static/img/logo3.png')"></el-image>				
 				<span style="font-weight: bold;font-size: 120%;color: floralwhite;">数据比对系统</span>
 			</el-header>
 		</el-container>
@@ -66,25 +66,23 @@ export default {
 	},
 	methods:{
 		//登录请求
-		submitForm(formName) {
+		submitForm:function(formName) {
 		//输入条件都通过验证，才进行请求，否则，界面显示对应的提示
 		  this.$refs[formName].validate((valid) => {
 		    if (valid) {
-			var username = this.ruleForm.username
 			//AES加密
 			var password = CryptoJS.AES.encrypt(this.ruleForm.password,'43f24a7ee1e03566307d11bd41495867').toString()
-			window.console.log(password)
 			//判断复选框是否被勾选 勾选则调用配置cookie方法 setcookie
 			if (this.ruleForm.checked == true){		
 				//传入账号名，密码，和保存天数3个参数
-				this.setCookie(username,this.ruleForm.password,7)
+				this.setCookie(this.ruleForm.username,this.ruleForm.password,7)
 			} else{
 				//保存密码未勾选，清空Cookie
 				this.clearCookie()
 			}
 			//登录接口post请求
-			this.$http.post(oaURL+'/userservice/user/login',
-			{username:username,password:password,source:'oa',verify_type:'token'},
+			this.$http.post(process.env.VUE_APP_BASE_API_OA+'/userservice/user/login',
+			{username:this.ruleForm.username,password:password,source:'oa',verify_type:'token'},
 			{headers:{'Project-Id':'3'}}
 			).then(function(res){	
 				//code = 0 代表 登录成功
@@ -96,24 +94,16 @@ export default {
 					//nickname 真实姓名，用于系统中展示
 					localStorage.setItem("nickname",res.body.data.nickname)		
 					// 登录成功后正常跳转到用例管理界面
-					window.location.href = "./index.html";
+					window.location.href = "system.html#/upcase";
 				} 
 				// code =13 代表 用户名或密码错误
 				else if(res.body.code == 13){
-					this.$message({
-						message:'用户名或密码错误',
-						center: true,
-						type:'warning'
-					})
+					this.$message.warning('用户名或密码错误')
 				}					
 			},
 			//登录失败处理，弹出返回的错误提示
 			function(res){
-				this.$message({
-					message:'登录失败',
-					center: true,
-					type:'error'
-				})
+				this.$message.error('登录失败')
 			});
 		    } 
 		  // 未通过表单输入验证，直接return false 不处理 验证未通过的提示显示在界面上
@@ -123,7 +113,7 @@ export default {
 		});
 		},
 		//设置cookie，将cookie以一定的格式存取，保存的天数需要转换一下时间格式
-		setCookie(username, password, exdays) {
+		setCookie:function(username, password, exdays) {
 		  var exdate = new Date(); //获取时间
 		  exdate.setTime(exdate.getTime() + 24 * 60 * 60 * 1000 * exdays) //保存的天数
 		  //字符串拼接cookie
@@ -131,7 +121,7 @@ export default {
 		  window.document.cookie = "password" + "=" + password + ";path=/;expires=" + exdate.toGMTString()
 		},
 		//读取cookie
-		getCookie() {
+		getCookie:function() {
 		  if (document.cookie.length > 0) {
 			  var arr = document.cookie.split('; ') //这里显示的格式需要切割一下自己可输出看下
 			  for (var i = 0; i < arr.length; i++) {
@@ -146,11 +136,11 @@ export default {
 		  }
 		},
 		//清除cookie
-		clearCookie() {
+		clearCookie:function() {
 		  this.setCookie("", "", -1) //修改前两个参数值都为空，天数为-1天
 		},
 		//清空表单
-		resetForm(formName) {
+		resetForm:function(formName) {
 		this.ruleForm.checked = false //记住密码勾选框置为false
 		  this.$refs[formName].resetFields() //input都清空
 		}
@@ -159,5 +149,5 @@ export default {
 </script>
 
 <style>
-@import '../../static/css/jacky.css'
+@import url('../../static/css/jacky.css')
 </style>
