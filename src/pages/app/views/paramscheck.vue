@@ -72,7 +72,8 @@
 					<el-table id="out-table" stripe border :data="table.tabledata"
 					style="overflow-x: auto;width:100%"
 					:max-height="500"
-					:cell-style="cellStyle" :header-cell-style="HeaderCellStyle"
+					:header-cell-style="HeaderCellStyle"
+					:cell-style="cellStyle"
 					v-loading="table.loading"
 					element-loading-text="拼命加载中"
 					element-loading-spinner="el-icon-loading"
@@ -246,6 +247,7 @@ export default {
 				tabledata table每行的数据，这个就不再多描述了
 				tablecheckdata 服务端获取的，校验事件参数结果的返回，用于渲染table使用，标出缺少的字段 颜色展示
 				loading 点击查询，给table置为 loading状态
+				checkevents 字符串拼接显示的已勾选要检查的事件
 			*/
 			table:{
 				cols:[],
@@ -281,7 +283,7 @@ export default {
 	},
 	methods:{
 		//获取所有的游戏
-		getgamelist(){
+		getgamelist:function(){
 			var data = {}
 			this.$http.post(process.env.VUE_APP_BASE_API+'/game/findgame',
 			data,{headers:{'uid':localStorage.getItem("uid"),'token':localStorage.getItem("token")}}
@@ -303,7 +305,7 @@ export default {
 			})
 		},
 		//格式化数据展示，因为拿到的值都是0 和 1，不能用于展示，因此多做一个处理
-		formatte(channel){
+		formatte:function(channel){
 			if(channel == 0){
 				return '联运'
 			}else if (channel == 1){
@@ -314,7 +316,7 @@ export default {
 			选择游戏后，触发展示对应游戏的检查字段详细表格，选择框每次切换都会执行一次这个函数
 			将value值 通过substring方法进行提取 gamename与gameid，以便后续发送请求使用	
 		*/
-		selectgamechange(value){
+		selectgamechange:function(value){
 			console.log(value)
 			this.game.selectgame = value.substring(value.lastIndexOf(',')+1)
 			this.game.selectgameid = value.substring(0,value.lastIndexOf(','))
@@ -344,7 +346,7 @@ export default {
 			})
 		},
 		//检查字段!!!!!!
-		search(){
+		search:function(){
 			if (this.sqlfind.sql.trim().length == 0){
 			    this.$notify.error({
 				  title: '错误',
@@ -360,6 +362,8 @@ export default {
 						this.table.checkevents = this.table.checkevents + ',' + this.eventscheck.checkedevents[i].id.toString()
 					}
 					this.table.checkevents = this.table.checkevents.substr(1)
+				}else{
+					this.table.checkevents = ''
 				}
 				sql_temp = sql_temp.replace(/\*/g,"#\*").replace(/from/ig,"#from")
 				var data ={
@@ -385,7 +389,6 @@ export default {
 							this.table.cols = res.body.data.tablekey.split(',')
 							this.table.tabledata = res.body.data.danadata
 							this.counttable.tabledata.push(res.body.data.extraevent)
-							
 						}
 					}else if(res.body.code == 401){
 						this.table.loading = false
@@ -404,7 +407,7 @@ export default {
 			}
 		},
 		//保存sql语句
-		upsql(){
+		upsql:function(){
 			if (this.dialogsave.name.trim().length == 0){
 			    this.$message({
 				  message: '文件名不能为空',
@@ -441,7 +444,7 @@ export default {
 			}
 		},
 		//我的查询界面
-		sqlserchdetail(){
+		sqlserchdetail:function(){
 			this.dialogdetail.Visible = true
 			this.$http.get(process.env.VUE_APP_BASE_API+'/dana/findsql',
 			{params:{},
@@ -463,11 +466,11 @@ export default {
 			})
 		},
 		//格式化用例创建时间，将时间戳转化为24小时制
-		formattertime(row,colunm){
+		formattertime:function(row,colunm){
 			return formatDate(row.createtime)
 		},
 		//提交重命名
-		rename(){
+		rename:function(){
 			if (this.dialogedit.name.trim().length == 0){
 			    this.$message({
 				  message: '名称不能为空',
@@ -504,41 +507,36 @@ export default {
 		},
 		/*
 			table 单元格 style 特殊处理
-			服务端返回的数据里，还带有例如‘未检测到XXX字段’的数据，与我们需要判断的某一个事件的字段参数为null放在一起
-			因此需要做一个处理，使用indexof方法判断是否包含‘未检测’，接着再进行行数与column.label的判断，最后渲染单元格
+			直接使用rowindex在tablecheckdata中以下标的方式进行判断，已达到循环的目的
+			checkKey的值为一个字符串，字符串中逗号隔开每个为空的字段，那个字段就是我们需要进行处理渲染的字段
+			当column.label在checkKey中包含时，则返回颜色pink
 		*/
-		cellStyle({row,column,rowIndex,columnIndex}){
-			for (var i =0;i<this.table.tablecheckdata.length;i++){
-				if(this.table.tablecheckdata[i].nullkey != null){
-					var temp_data = this.table.tablecheckdata[i].nullkey.split(',')
-					for (var m=0;m<temp_data.length;m++){
-						if (temp_data[m].indexOf('未检测') == -1 )
-						{
-							if(rowIndex == this.table.tablecheckdata[i].id && column.label == temp_data[m]){
-								return 'background:#F56C6C'
-							}
-						}
-					}
+		cellStyle:function({row,column,rowIndex,columnIndex}){
+			//nullkey为空就不需要处理了，直接略过
+			if(this.table.tablecheckdata[rowIndex].nullkey != null && this.table.tablecheckdata[rowIndex].nullkey.checkKey != null ){
+				//indexof方法是返回该字符在字符串中第一次出现的位置，如果存在，则返回一个位置下标；该字符串中没有该字符，则会返回-1，因此这里用> -1 判断，即存在即可
+				if(this.table.tablecheckdata[rowIndex].nullkey.checkKey.indexOf(column.label) > -1 ){
+					return 'background:#F56C6C'
 				}
 			}
 		},
 		//table header cell style 特殊处理
-		HeaderCellStyle({row,rowIndex}){
+		HeaderCellStyle:function({row,rowIndex}){
 			return header()
 		},
 		//点击显示出编辑的dialog框
-		handleEdit(index,row){
+		handleEdit:function(index,row){
 			this.dialogedit.Visible = true
 			this.dialogedit.id = row.id
 			this.dialogedit.name = row.title
 		},
 		//打开sql语句操作
-		handleOpen(index,row){
+		handleOpen:function(index,row){
 			this.sqlfind.sql = row.sqlstring.replace(/\?/g,"\'").replace(/#/g,"")
 			this.dialogdetail.Visible = false
 		},
 		//删除sql语句操作
-		handleDelete(index,row){
+		handleDelete:function(index,row){
 			this.$confirm('此操作将永久删除该保存的sql语句, 是否继续?', '提示', {
 			  confirmButtonText: '确定',
 			  cancelButtonText: '取消',
@@ -570,7 +568,7 @@ export default {
 			});
 		},
 		//导出table为excel表格
-		exportExcel(){
+		exportExcel:function(){
 			 /* generate workbook object from table */
 			 var xlsxParam = {raw:true}  //转换成excel时，使用yuanshi的格式
 			 var wb = XLSX.utils.table_to_book(document.querySelector('#out-table'),xlsxParam)
@@ -588,7 +586,7 @@ export default {
 			当val = false时候,则将checkevents置为空，代表全不选
 			isIndeterminate 的目的是为了判断是否处于全选或全不选的状态，true代表没有全选or全不选，false代表此时为全选or全不选
 		*/
-		handleCheckAllChange(val){
+		handleCheckAllChange:function(val){
 			this.eventscheck.checkedevents = val ? this.eventscheck.events : [];
 			this.eventscheck.isIndeterminate = false;
 		},
@@ -597,7 +595,7 @@ export default {
 			首先获取此时已勾选的checkbox数量，若其与本身游戏包含的事件数量相同，则checkall 为 true状态，反之为false
 			isIndeterminate 在 已勾选的checkbox数量>0 且 已勾选的checkbox数量 <本身游戏包含的事件数量 时，为true，代表此时不是全选or全不选
 		*/
-		handleCheckedEventsChange(value){
+		handleCheckedEventsChange:function(value){
 			let checkedCount = value.length;
 			this.eventscheck.checkAll = checkedCount === this.eventscheck.events.length;
 			this.eventscheck.isIndeterminate = checkedCount > 0 && checkedCount < this.eventscheck.events.length;
