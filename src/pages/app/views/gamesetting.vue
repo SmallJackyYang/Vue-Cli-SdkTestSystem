@@ -53,10 +53,10 @@
 		  width="25%">
 		  <el-form ref="addgamedialogform" :model="addgamedialog" label-width="80px">
 			  <el-form-item label="游戏名称">
-					<el-input v-model="addgamedialog.gamename" style="width: 300px;" placeholder="输入游戏名称" clearable></el-input>
+					<el-input v-model="addgamedialog.gamename" placeholder="输入游戏名称" clearable></el-input>
 			  </el-form-item>
 			  <el-form-item label="运营渠道">
-					<el-select v-model="addgamedialog.gamechannel" style="width: 300px;" placeholder="请选择运营渠道" >
+					<el-select v-model="addgamedialog.gamechannel" placeholder="请选择运营渠道" style="width: 100%;">
 							<el-option
 								v-for="item in addgamedialog.options"
 								:key="item.value"
@@ -77,10 +77,10 @@
 		  width="25%">
 		  <el-form ref="updategamedialogform" :model="updategamedialog" label-width="80px">
 			  <el-form-item label="游戏名称">
-			      <el-input v-model="updategamedialog.gamename" style="width: 300px;" placeholder="输入游戏名称" clearable></el-input>
+			      <el-input v-model="updategamedialog.gamename" placeholder="输入游戏名称" clearable></el-input>
 			  </el-form-item>
 			  <el-form-item label="运营渠道">
-			      <el-select v-model="updategamedialog.gamechannel" style="width: 300px;" placeholder="请选择运营渠道">
+			      <el-select v-model="updategamedialog.gamechannel" placeholder="请选择运营渠道" style="width: 100%;">
 			          <el-option
 			            v-for="item in updategamedialog.options"
 			            :key="item.value"
@@ -102,13 +102,13 @@
 			:close-on-click-modal=false >
 		  <el-form ref="addeventdialogform" :model="addeventdialog" label-width="80px">
 				<el-form-item label="游戏：">
-					<el-input v-model="game.selectgame" style="width: 500px;" :disabled="true"></el-input>
+					<el-input v-model="game.selectgame" :disabled="true"></el-input>
 				</el-form-item>
 			  <el-form-item label="事件名">
-					<el-input v-model="addeventdialog.event" style="width: 500px;" placeholder="输入事件名称" clearable></el-input>
+					<el-input v-model="addeventdialog.event" placeholder="输入事件名称" clearable></el-input>
 			  </el-form-item>
 			  <el-form-item label="字段参数">
-					<el-input v-model="addeventdialog.field" style="width: 500px;" placeholder="输入字段参数" clearable></el-input>
+					<el-input v-model="addeventdialog.field" placeholder="输入字段参数" clearable></el-input>
 			  </el-form-item>
 		  </el-form>
 			<el-tag style="margin-left: 80px;" type="danger" effect="dark">参数之间用逗号隔开;字段参数填写格式:field1,field2,;公共字段不需要填写,只需自定义字段</el-tag>
@@ -124,13 +124,13 @@
 			:close-on-click-modal=false >
 		  <el-form ref="editeventdialogform" :model="editeventdialog" label-width="80px">
 				<el-form-item label="游戏：">
-					<el-input v-model="game.selectgame" style="width: 500px;" :disabled="true"></el-input>
+					<el-input v-model="game.selectgame" :disabled="true"></el-input>
 				</el-form-item>
 			  <el-form-item label="事件名">
-					<el-input v-model="editeventdialog.event" style="width: 500px;" placeholder="输入事件名称" clearable></el-input>
+					<el-input v-model="editeventdialog.event" placeholder="输入事件名称" clearable></el-input>
 			  </el-form-item>
 			  <el-form-item label="字段参数">
-					<el-input v-model="editeventdialog.field" style="width: 500px;" placeholder="输入字段参数" clearable></el-input>
+					<el-input v-model="editeventdialog.field" placeholder="输入字段参数" clearable></el-input>
 			  </el-form-item>
 		  </el-form>
 			<el-tag style="margin-left: 80px;" type="danger" effect="dark">参数之间用逗号隔开;字段参数填写格式:field1,field2,;公共字段不需要填写,只需自定义字段</el-tag>

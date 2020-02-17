@@ -108,7 +108,7 @@
 		  width="25%">
 		  <el-form ref="dialogsaveform" :model="dialogsave" label-width="80px">
 			  <el-form-item label="文件名">
-			      <el-input v-model="dialogsave.name" style="width: 300px;"></el-input>
+			      <el-input v-model="dialogsave.name"></el-input>
 			  </el-form-item>
 		  </el-form>
 		  <span slot="footer" class="dialog-footer">
@@ -159,7 +159,7 @@
 		  width="20%">
 		  <el-form ref="dialogeditform" :model="dialogedit" label-width="80px">
 			  <el-form-item label="名称">
-			      <el-input v-model="dialogedit.name" style="width: 200px;"></el-input>
+			      <el-input v-model="dialogedit.name"></el-input>
 			  </el-form-item>
 		  </el-form>
 		  <span slot="footer" class="dialog-footer">
