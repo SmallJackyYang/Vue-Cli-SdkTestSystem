@@ -317,7 +317,6 @@ export default {
 			将value值 通过substring方法进行提取 gamename与gameid，以便后续发送请求使用	
 		*/
 		selectgamechange:function(value){
-			console.log(value)
 			this.game.selectgame = value.substring(value.lastIndexOf(',')+1)
 			this.game.selectgameid = value.substring(0,value.lastIndexOf(','))
 			var data = {
@@ -355,6 +354,7 @@ export default {
 				});
 			}else{
 				this.table.loading = true
+				this.table.checkevents = ''
 				var sql_temp = '#' + this.sqlfind.sql
 				//将已经勾选的游戏事件checkedevents里的数据拼接为字符串格式，中间用，隔开
 				if (this.eventscheck.checkedevents.length != 0){
@@ -362,8 +362,6 @@ export default {
 						this.table.checkevents = this.table.checkevents + ',' + this.eventscheck.checkedevents[i].id.toString()
 					}
 					this.table.checkevents = this.table.checkevents.substr(1)
-				}else{
-					this.table.checkevents = ''
 				}
 				sql_temp = sql_temp.replace(/\*/g,"#\*").replace(/from/ig,"#from")
 				var data ={
@@ -420,7 +418,7 @@ export default {
 				sqltemp = sqltemp.replace(/from/ig,"#from")
 				var data = {
 					title:this.dialogsave.name,
-					db:this.sqlfind.database,
+					db:'dana',
 					sqlstring:sqltemp,
 				}
 				this.$http.post(process.env.VUE_APP_BASE_API+'/dana/savesql',
@@ -570,7 +568,7 @@ export default {
 		//导出table为excel表格
 		exportExcel:function(){
 			 /* generate workbook object from table */
-			 var xlsxParam = {raw:true}  //转换成excel时，使用yuanshi的格式
+			 var xlsxParam = {raw:true}  //转换成excel时，使用原始的格式
 			 var wb = XLSX.utils.table_to_book(document.querySelector('#out-table'),xlsxParam)
 			 /* get binary string as output */
 			 var wbout = XLSX.write(wb, { bookType: 'xlsx', bookSST: true, type: 'array' })

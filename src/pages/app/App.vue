@@ -20,18 +20,19 @@
 				</el-dropdown>	
 			</el-header>
 			<el-container>	
-				<el-aside  width="200px" style="border-right: 2px solid #cccacb;">
+				<el-aside  width="250px" style="border-right: 2px solid #cccacb;">
 					<el-row class="tac">
 					  <el-col :span="24" >
-					    <el-menu :default-active="this.$route.path" class="el-menu-vertical-demo border" background-color="#E9EEF3" router>	
+					    <el-menu :default-active="this.$route.path" class="el-menu-vertical-demo border" background-color="#E9EEF3" router >	
 								<el-submenu index="1">
-									<template slot="title"><i class="el-icon-s-data"></i>数据比对</template>
+									<template slot="title" style="padding-left: 0;"><i class="el-icon-s-data"></i>数据比对</template>
 										<el-menu-item index="/upcase"><i class="el-icon-upload"></i> 用例上传</el-menu-item>
 										<el-menu-item index="/findcase"><i class="el-icon-folder"></i> 用例管理</el-menu-item>
 								<el-submenu index="1-3">
 									<template slot="title"><i class="el-icon-data-analysis"></i>Dana数据</template>
-										<el-menu-item index="/paramscheck"><i class="el-icon-search"></i> 数据查询</el-menu-item>
-										<el-menu-item index="/gamesetting"><i class="el-icon-setting"></i> 游戏配置</el-menu-item>
+										<el-menu-item index="/paramscheck"> 数据查询</el-menu-item>
+										<el-menu-item index="/gamesetting"> 游戏自定义事件配置</el-menu-item>
+										<el-menu-item index="/redis"> SDK事件配置</el-menu-item>
 									</el-submenu>
 								</el-submenu>
 								<el-menu-item index="/userdetail"><i class="el-icon-user"></i> 个人中心</el-menu-item>

@@ -44,7 +44,7 @@
 			:close-on-click-modal=false >
 		  <el-form ref="editeventdialogform" :model="editeventdialog" label-width="80px">
 			  <el-form-item label="事件名称">
-					<el-input v-model="editeventdialog.sdkkey" style="width: 700px;" placeholder="输入事件名称" clearable></el-input>
+					<el-input v-model="editeventdialog.sdkkey" style="width: 700px;" placeholder="输入事件名称" :disabled="true"></el-input>
 			  </el-form-item>
 				<el-form-item label="字段参数">
 					<el-input v-model="editeventdialog.sdkvalue" style="width: 700px;" placeholder="输入需要事件需要检查的字段" clearable></el-input>
@@ -107,57 +107,73 @@ export default {
 		},
 		//添加公共事件与其专属字段的函数
 		addevent:function(){
-			var data = {
-				sdkkey : this.addeventdialog.sdkkey,
-				sdkvalue : this.addeventdialog.sdkvalue,
-			}
-			this.$http.post(process.env.VUE_APP_BASE_API+'/key/addkey',
-			data,{headers:{'uid':localStorage.getItem("uid"),'token':localStorage.getItem("token")}}
-			).then(function(res){
-				if (res.body.code == 0){
-					this.$message.success('添加成功')
-					//添加成功后关闭模态框，并重新执行查询，以便更新表格
-					this.addeventdialog.Visible = false
-					this.find()
-				}else if(res.body.code == 401){
-					this.$alert('登录超时，请重新登录', '提示', {
-					  confirmButtonText: '确定',
-					  callback: action => {
-						localStorage.clear()
-						window.location.href = "./login.html"
-					  }
-					})	
-				}else{
-					this.$message.error(res.body);
+			if(this.addeventdialog.sdkkey.trim().length == 0 ){
+				this.$message({
+				  message: '事件名不能为空',
+				  duration: 2000,
+				  type:'error'
+				})
+			}else{
+				var data = {
+					sdkkey : this.addeventdialog.sdkkey,
+					sdkvalue : this.addeventdialog.sdkvalue,
 				}
-			})
+				this.$http.post(process.env.VUE_APP_BASE_API+'/key/addkey',
+				data,{headers:{'uid':localStorage.getItem("uid"),'token':localStorage.getItem("token")}}
+				).then(function(res){
+					if (res.body.code == 0){
+						this.$message.success('添加成功')
+						//添加成功后关闭模态框，并重新执行查询，以便更新表格
+						this.addeventdialog.Visible = false
+						this.find()
+					}else if(res.body.code == 401){
+						this.$alert('登录超时，请重新登录', '提示', {
+						  confirmButtonText: '确定',
+						  callback: action => {
+							localStorage.clear()
+							window.location.href = "./login.html"
+						  }
+						})	
+					}else{
+						this.$message.error(res.body);
+					}
+				})
+			}
 		},
 		//编辑公共事件与其专属字段的函数
 		updateevent:function(){
-			var data = {
-				sdkkey : this.editeventdialog.sdkkey,
-				sdkvalue : this.editeventdialog.sdkvalue,
-			}
-			this.$http.post(process.env.VUE_APP_BASE_API+'/key/updatekey',
-			data,{headers:{'uid':localStorage.getItem("uid"),'token':localStorage.getItem("token")}}
-			).then(function(res){
-				if (res.body.code == 0){
-					this.$message.success('更新成功')
-					//更新成功后关闭模态框，并重新执行查询，以便更新表格
-					this.editeventdialog.Visible = false
-					this.find()
-				}else if(res.body.code == 401){
-					this.$alert('登录超时，请重新登录', '提示', {
-					  confirmButtonText: '确定',
-					  callback: action => {
-						localStorage.clear()
-						window.location.href = "./login.html"
-					  }
-					})	
-				}else{
-					this.$message.error(res.body);
+			if(this.editeventdialog.sdkkey.trim().length == 0 ){
+				this.$message({
+				  message: '事件名不能为空',
+				  duration: 2000,
+				  type:'error'
+				})
+			}else{
+				var data = {
+					sdkkey : this.editeventdialog.sdkkey,
+					sdkvalue : this.editeventdialog.sdkvalue,
 				}
-			})
+				this.$http.post(process.env.VUE_APP_BASE_API+'/key/addkey',
+				data,{headers:{'uid':localStorage.getItem("uid"),'token':localStorage.getItem("token")}}
+				).then(function(res){
+					if (res.body.code == 0){
+						this.$message.success('更新成功')
+						//更新成功后关闭模态框，并重新执行查询，以便更新表格
+						this.editeventdialog.Visible = false
+						this.find()
+					}else if(res.body.code == 401){
+						this.$alert('登录超时，请重新登录', '提示', {
+						  confirmButtonText: '确定',
+						  callback: action => {
+							localStorage.clear()
+							window.location.href = "./login.html"
+						  }
+						})	
+					}else{
+						this.$message.error(res.body);
+					}
+				})
+			}
 		},
 		//删除公共事件
 		deleteevent:function(index,row){
@@ -167,7 +183,8 @@ export default {
 				type: 'warning'
 			}).then(() => {
 				var data = {
-					sdkkey : row.sdkkey
+					sdkkey : row.sdkkey,
+					sdkvalue : row.sdkvalue
 				}
 				this.$http.post(process.env.VUE_APP_BASE_API+'/key/delkey',
 				data,{headers:{'uid':localStorage.getItem("uid"),'token':localStorage.getItem("token")}}

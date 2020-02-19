@@ -2,23 +2,23 @@
 	<div id="upcase">
 		<el-form ref="uploadform" :model="uploadform" :rules="rules" label-width="110px" label-position="left">
 			<el-form-item label="用例名称" prop="casename">
-			<el-col :span="6">
+			<el-col :span="7">
 				<el-input v-model="uploadform.casename" ></el-input>
 			</el-col>
 			</el-form-item>
 			<el-form-item label="SDK版本号" prop="sdkname">
-			<el-col :span="6">
+			<el-col :span="7">
 				<el-input v-model="uploadform.sdkname" ></el-input>
 			</el-col>
 			</el-form-item>
 			<el-form-item label="设备ID" prop="didname">
-			<el-col :span="6">
+			<el-col :span="7">
 				<el-input v-model="uploadform.didname"></el-input>
 			</el-col>
 			</el-form-item>
 			<el-form-item label="Excel文件：" prop="datalist">
 			<el-checkbox-group v-model="uploadform.datalist"></el-checkbox-group>
-			<el-col :span="6">
+			<el-col :span="7">
 				<el-upload
 					class="upload-demo"
 					ref="upload"
@@ -33,11 +33,11 @@
 					:on-remove="fileremove"
 					:before-remove="beforeRemove">
 					<el-button slot="trigger" size="small" type="info">上传文件<i class="el-icon-upload el-icon--right"></i></el-button>
-					<span style="margin-top: 0px;font-size: 12px;color: red;">只能上传xls格式的 excel文件,只能上传一个文件</span>
+					<span style="margin-top: 0px;font-size: 12px;color: red;margin-left: 10px;">只能上传xls格式的 excel文件,只能上传一个文件!!!</span>
 					<br>
 					<el-button type="primary" @click="submitUpload('uploadform')" style="margin-top: 25px;">用例提交</el-button>
-					<el-button style="margin-left: 10px;width: 82px;" @click="resetForm('uploadform')">取消</el-button>
-					<el-button style="margin-left: 10px;" type="warning" @click="download">下载上传用例模板</el-button>
+					<el-button style="margin-left: 30px;width: 82px;" @click="resetForm('uploadform')">取消</el-button>
+					<el-button style="margin-left: 30px;" type="warning" @click="download">下载上传用例模板</el-button>
 				</el-upload>
 			</el-col>
 			</el-form-item>	
