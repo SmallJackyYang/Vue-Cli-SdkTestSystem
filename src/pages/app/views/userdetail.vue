@@ -26,7 +26,7 @@
 </template>
 
 <script>
-import {formatDate,header}  from '../../../static/js/custom.js'
+import {formatDate}  from '../../../static/js/custom.js'
 export default {
   name: 'userdetail',
 	data:function(){

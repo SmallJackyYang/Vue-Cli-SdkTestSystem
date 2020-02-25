@@ -2,26 +2,26 @@
 	<div id="findcase">
 		<el-form :inline="true" :model="formInline" class="demo-form-inline">
 			<el-form-item label="用例名称">
-			    <el-input v-model="formInline.casename" placeholder="输入要查询的用例名称"></el-input>
-		    </el-form-item>
-		    <el-form-item label="sdk版本号">
-			      <el-input v-model="formInline.sdkver" placeholder="输入要查询的sdk版本号" style="width:170px;"></el-input>						    
-		    </el-form-item>
+				<el-input v-model="formInline.casename" placeholder="输入查询的用例名称"></el-input>
+			</el-form-item>
+			<el-form-item label="sdk版本号">
+				<el-input v-model="formInline.sdkver" placeholder="输入查询的sdk版本号" style="width:170px;"></el-input>						    
+			</el-form-item>
 			<el-form-item label="设备号">
-			      <el-input v-model="formInline.did" placeholder="输入要查询的设备号" style="width:340px;"></el-input>					
+				<el-input v-model="formInline.did" placeholder="输入查询的设备号" style="width:340px;"></el-input>					
 			</el-form-item>
 			<el-form-item label="日期">
-			      <el-date-picker
-					v-model="formInline.timevalue1"
-					type="datetimerange"
-					start-placeholder="开始日期"
-					end-placeholder="结束日期"
-					:default-time="['12:00:00']"
-					value-format="timestamp">
-				  </el-date-picker> 
+				<el-date-picker
+				v-model="formInline.timevalue1"
+				type="datetimerange"
+				start-placeholder="开始日期"
+				end-placeholder="结束日期"
+				:default-time="['12:00:00']"
+				value-format="timestamp">
+				</el-date-picker> 
 			</el-form-item>
 		    <el-form-item>
-				<el-button type="primary" icon="el-icon-search" @click="handleTableList()">搜索</el-button>
+					<el-button type="primary" icon="el-icon-search" @click="handleTableList()">搜索</el-button>
 		    </el-form-item>
 		</el-form>
 		<el-divider></el-divider>
@@ -43,30 +43,30 @@
 				<el-table-column label="操作" prop="address" min-width="32%" align="center">
 				  <template slot-scope="scope">
 				    <el-button
-					size="small"
+						size="small"
 				    type="success" 
 				    icon="el-icon-caret-right" :loading="scope.row.btnloading"
-					@click="handleAction(scope.$index, scope.row)">执行</el-button>
-					<el-button
+						@click="handleAction(scope.$index, scope.row)">执行</el-button>
+						<el-button
 					  type="primary"
 					  size="small"
 					  icon="el-icon-edit"
 					  @click="handleEdit(scope.$index, scope.row)">编辑</el-button>
-					<el-button
+						<el-button
 					  size="small"
 					  type="danger"
 					  icon="el-icon-delete"
 					  @click="handleDelete(scope.$index, scope.row)">删除</el-button>
-					<el-button 
-					type="info"
-					size="small"
-					icon="el-icon-document" v-if="scope.row.case_status == 1"
-					@click="handleDetail(scope.$index, scope.row)">详情</el-button>
-					<el-button
-					type="warning"
-					size="small"
-					icon="el-icon-download" v-if="scope.row.case_status == 1"
-					@click="handleDowload(scope.$index, scope.row)">下载</el-button>
+						<el-button 
+						type="info"
+						size="small"
+						icon="el-icon-document" v-if="scope.row.case_status == 1"
+						@click="handleDetail(scope.$index, scope.row)">详情</el-button>
+						<el-button
+						type="warning"
+						size="small"
+						icon="el-icon-download" v-if="scope.row.case_status == 1"
+						@click="handleDowload(scope.$index, scope.row)">下载</el-button>
 				  </template>
 				</el-table-column>
 			</el-table>
@@ -182,6 +182,7 @@ export default {
 		}
 	},
 	mounted() {
+		//初始化执行获取表格数据的函数
 		this.handleTableList()
 	},
 	methods:{
@@ -458,7 +459,7 @@ export default {
 	          const _col = _row > 0 ? 1 : 0;
 		        return {
 	            rowspan: _row,
-             colspan: _col
+             	colspan: _col
 		        }
 	    		} else{			
 			}				  

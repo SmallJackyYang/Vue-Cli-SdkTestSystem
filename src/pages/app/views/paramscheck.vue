@@ -377,6 +377,7 @@ export default {
 						//data为空，则不需要进行其余操作，提示即可
 						if(res.body.data == null){
 							this.table.loading = false
+							this.table.tabledata = []
 							this.$message.warning('未查询到对应的数据，请检查SQL语句是否正确or等待一段时间再查询')				
 						}else{
 							//将table loading状态置为false，将渲染table的数据都赋值给对应的绑定参数,counttable因为使用push函数，因此每次查询的时候，先置为空
@@ -513,7 +514,7 @@ export default {
 			//nullkey为空就不需要处理了，直接略过
 			if(this.table.tablecheckdata[rowIndex].nullkey != null && this.table.tablecheckdata[rowIndex].nullkey.checkKey != null ){
 				//indexof方法是返回该字符在字符串中第一次出现的位置，如果存在，则返回一个位置下标；该字符串中没有该字符，则会返回-1，因此这里用> -1 判断，即存在即可
-				if(this.table.tablecheckdata[rowIndex].nullkey.checkKey.indexOf(column.label) > -1 ){
+				if(this.table.tablecheckdata[rowIndex].nullkey.checkKey[column.label]  == 1 ){
 					return 'background:#F56C6C'
 				}
 			}

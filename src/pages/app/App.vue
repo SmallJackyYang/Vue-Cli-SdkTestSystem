@@ -64,6 +64,7 @@ export default {
 		if (!localStorage.getItem("uid") || !localStorage.getItem("token")){
 			this.$alert('当前处于未登录状态，请登录', '提示', {
 			  confirmButtonText: '确定',
+				type: 'warning',
 			  callback: action => {
 				localStorage.clear()
 				window.location.href = "./login.html"
@@ -81,11 +82,11 @@ export default {
 				//点击确定后，发登出请求
 				this.$http.get(process.env.VUE_APP_BASE_API_OA+'/userservice/user/logout',
 				{params:{userId:localStorage.getItem("uid"),projectId:3},
-				headers:{'Project-Id':'3','User-id':localStorage.getItem("uid"),'Kdc-token':localStorage.getItem("token")}}
+				headers :{'Project-Id':'3','User-id':localStorage.getItem("uid"),'Kdc-token':localStorage.getItem("token")}}
 				).then(function(res){
 					//code = 0 代表 登出成功
 					if (res.body.code == 0) {
-						//登出成功，则清楚所有locastorage存储的信息，然后跳转登录界面
+						//登出成功，则清除所有locastorage存储的信息，然后跳转登录界面
 						localStorage.clear()
 						window.location.href = "./login.html"
 						}
