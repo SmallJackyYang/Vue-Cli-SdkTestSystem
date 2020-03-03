@@ -100,6 +100,7 @@ export default {
 		*/
 		httpRequest:function(param){
 			//这里可以打印一下，看看传递的param参数是什么
+			// console.log(param)
 			let fileObj = param.file
 			//带文件上传的请求需要用到 formdata格式，将参数一一append进去
 			let formdata = new FormData()

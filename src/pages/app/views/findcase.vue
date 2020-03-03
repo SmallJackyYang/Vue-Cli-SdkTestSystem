@@ -72,7 +72,7 @@
 			</el-table>
 			<!--size-change 为切换每页最大展示数触发的函数，current-change 为切换当前页数触发的函数-->
 			<!--page-sizes为可提供的每页展示数选择-->
-				<el-pagination
+			<el-pagination
 					@size-change="handleSizeChange" 
 					@current-change="handleCurrentChange"
 					:current-page="table.currentPage"

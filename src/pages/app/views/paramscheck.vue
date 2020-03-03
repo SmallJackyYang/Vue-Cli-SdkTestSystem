@@ -54,7 +54,9 @@
 				<el-button type="primary" size="small" @click="sqlserchdetail"><i class="el-icon-document"></i>  我的查询</el-button>
 				<el-button type="primary" size="small" style="float: right;width: 100px;" @click="search">
 					<i class="el-icon-search" ></i>  查询</el-button>
-				<el-button v-if="table.tabledata.length>0" type="primary" size="small" style="float: right;" @click="exportExcel">
+				<el-button type="warning" size="small" style="float: right;width: 100px;" @click="historysearch">
+					<i class="el-icon-search" ></i>  历史查询</el-button>
+				<el-button v-if="table.tabledata.length>0" type="primary" size="small" style="float: right;" @click="download">
 					<i class="el-icon-download"></i>  一键导出</el-button>
 					<el-input
 						type="textarea"
@@ -167,13 +169,45 @@
 		    <el-button type="primary" @click="rename">确 定</el-button>
 		  </span>
 		</el-dialog>
+		<el-dialog
+		  title="历史记录"
+		  :visible.sync="dialoghistorylist.Visible"
+		  width="45%">
+			<el-table style="width:99.9%" 
+			:data="dialoghistorylist.tabledata.slice((dialoghistorylist.currentPage - 1 )*dialoghistorylist.pageSize,dialoghistorylist.currentPage*dialoghistorylist.pageSize)" 
+			stripe border
+			:header-cell-style="HeaderCellStyle">
+				<el-table-column label="SQL语句" prop="sqlstring" :formatter="formatsqlstring" align="center" min-width="60%" show-overflow-tooltip>
+				</el-table-column>
+				<el-table-column label="查询时间" prop="updatetime"  :formatter="formattertime2" align="center" min-width="25%">    
+				</el-table-column>
+				<el-table-column label="操作" align="center" min-width="15%">
+				<template slot-scope="scope">
+					<el-button
+					size="mini"
+					type="primary" 
+					icon="el-icon-folder-opened"
+					@click="handleOpen(scope.$index, scope.row)">详情</el-button>
+				</template>
+				</el-table-column>
+			</el-table>
+			<el-pagination
+				@size-change="handleSizeChange" 
+				@current-change="handleCurrentChange"
+				:current-page="dialoghistorylist.currentPage"
+				:page-sizes="[5, 10, 20]"
+				:page-size="dialoghistorylist.pageSize"      
+				layout="total, sizes, prev, pager, next, jumper"
+				:total="dialoghistorylist.tabledata.length">
+			</el-pagination>
+		</el-dialog>
 	</div>
 </template>
 
 <script>
 import {formatDate,header}  from '../../../static/js/custom.js'
-import XLSX from 'xlsx'
-import FileSaver from 'file-saver'
+// import XLSX from 'xlsx'
+// import FileSaver from 'file-saver'
 export default {
   name: 'paramescheck',
 	data:function(){
@@ -248,6 +282,7 @@ export default {
 				tablecheckdata 服务端获取的，校验事件参数结果的返回，用于渲染table使用，标出缺少的字段 颜色展示
 				loading 点击查询，给table置为 loading状态
 				checkevents 字符串拼接显示的已勾选要检查的事件
+				data 保存查询时后端返回的data所有数据，并以json字符串形势保存，在导出excel时传递给后端时使用
 			*/
 			table:{
 				cols:[],
@@ -255,6 +290,7 @@ export default {
 				tablecheckdata:[],
 				loading:false,
 				checkevents:'',
+				data:'',
 			},
 			//用于获取数据统计结果的table
 			counttable:{
@@ -274,6 +310,18 @@ export default {
 				checkedevents:[],
 				events:[],
 				isIndeterminate:true,
+			},
+			/*
+				sql 历史查询记录
+				tabledata用于存储表格数据 
+				currentPage 前端分页功能中的 当前页数
+				pageSize 前端分页功能中的 一页最大条数
+			*/
+			dialoghistorylist:{
+				Visible:false,
+				tabledata:[],
+				currentPage:1,
+				pageSize: 5
 			},
 		}
 	},
@@ -374,11 +422,13 @@ export default {
 				data,{headers:{'uid':localStorage.getItem("uid"),'token':localStorage.getItem("token")}}
 				).then(function(res){
 					if (res.body.code == 0){
-						//data为空，则不需要进行其余操作，提示即可
+						//data为空，则不需要进行其余操作，清除上一次的数据后，提示即可
 						if(res.body.data == null){
 							this.table.loading = false
 							this.table.tabledata = []
-							this.$message.warning('未查询到对应的数据，请检查SQL语句是否正确or等待一段时间再查询')				
+							this.table.cols = []
+							this.counttable.tabledata = []
+							this.$message.warning('未查询到对应的数据，请检查SQL语句是否正确or等待一段时间再查询')
 						}else{
 							//将table loading状态置为false，将渲染table的数据都赋值给对应的绑定参数,counttable因为使用push函数，因此每次查询的时候，先置为空
 							this.table.loading = false
@@ -388,6 +438,8 @@ export default {
 							this.table.cols = res.body.data.tablekey.split(',')
 							this.table.tabledata = res.body.data.danadata
 							this.counttable.tabledata.push(res.body.data.extraevent)
+							this.table.data = JSON.stringify(res.body.data)
+							// console.log(this.table.data)
 						}
 					}else if(res.body.code == 401){
 						this.table.loading = false
@@ -468,6 +520,9 @@ export default {
 		formattertime:function(row,colunm){
 			return formatDate(row.createtime)
 		},
+		formattertime2:function(row,colunm){
+			return formatDate(row.updatetime)
+		},
 		//提交重命名
 		rename:function(){
 			if (this.dialogedit.name.trim().length == 0){
@@ -507,14 +562,14 @@ export default {
 		/*
 			table 单元格 style 特殊处理
 			直接使用rowindex在tablecheckdata中以下标的方式进行判断，已达到循环的目的
-			checkKey的值为一个字符串，字符串中逗号隔开每个为空的字段，那个字段就是我们需要进行处理渲染的字段
-			当column.label在checkKey中包含时，则返回颜色pink
+			checkkey的值为一个字符串，字符串中逗号隔开每个为空的字段，那个字段就是我们需要进行处理渲染的字段
+			当column.label在checkkey中包含时，则返回颜色pink
 		*/
 		cellStyle:function({row,column,rowIndex,columnIndex}){
 			//nullkey为空就不需要处理了，直接略过
-			if(this.table.tablecheckdata[rowIndex].nullkey != null && this.table.tablecheckdata[rowIndex].nullkey.checkKey != null ){
+			if(this.table.tablecheckdata[rowIndex].nullkey != null && this.table.tablecheckdata[rowIndex].nullkey.checkkey != null ){
 				//indexof方法是返回该字符在字符串中第一次出现的位置，如果存在，则返回一个位置下标；该字符串中没有该字符，则会返回-1，因此这里用> -1 判断，即存在即可
-				if(this.table.tablecheckdata[rowIndex].nullkey.checkKey[column.label]  == 1 ){
+				if(this.table.tablecheckdata[rowIndex].nullkey.checkkey[column.label]  == 1 ){
 					return 'background:#F56C6C'
 				}
 			}
@@ -533,6 +588,7 @@ export default {
 		handleOpen:function(index,row){
 			this.sqlfind.sql = row.sqlstring.replace(/\?/g,"\'").replace(/#/g,"")
 			this.dialogdetail.Visible = false
+			this.dialoghistorylist.Visible = false
 		},
 		//删除sql语句操作
 		handleDelete:function(index,row){
@@ -567,17 +623,17 @@ export default {
 			});
 		},
 		//导出table为excel表格
-		exportExcel:function(){
-			 /* generate workbook object from table */
-			 var xlsxParam = {raw:true}  //转换成excel时，使用原始的格式
-			 var wb = XLSX.utils.table_to_book(document.querySelector('#out-table'),xlsxParam)
-			 /* get binary string as output */
-			 var wbout = XLSX.write(wb, { bookType: 'xlsx', bookSST: true, type: 'array' })
-			 try {
-				 FileSaver.saveAs(new Blob([wbout], { type: 'application/octet-stream' }), 'Results.xlsx')
-			 } catch (e) { if (typeof console !== 'undefined') console.log(e, wbout) }
-			 return wbout
-		},
+		// exportExcel:function(){
+		// 	 /* generate workbook object from table */
+		// 	 var xlsxParam = {raw:true}  //转换成excel时，使用原始的格式
+		// 	 var wb = XLSX.utils.table_to_book(document.querySelector('#out-table'),xlsxParam)
+		// 	 /* get binary string as output */
+		// 	 var wbout = XLSX.write(wb, { bookType: 'xlsx', bookSST: true, type: 'array'})
+		// 	 try {
+		// 		 FileSaver.saveAs(new Blob([wbout], { type: 'application/octet-stream' }), 'Results.xlsx')
+		// 	 } catch (e) { if (typeof console !== 'undefined') console.log(e, wbout) }
+		// 	 return wbout
+		// },
 		/*
 			点击checkbox 全选按钮触发的函数
 			用于切换checkbox 全选or全不选
@@ -598,6 +654,78 @@ export default {
 			let checkedCount = value.length;
 			this.eventscheck.checkAll = checkedCount === this.eventscheck.events.length;
 			this.eventscheck.isIndeterminate = checkedCount > 0 && checkedCount < this.eventscheck.events.length;
+		},
+		/*
+			之前使用第三方依赖库xlsx，导致打包的时候对应的依赖库文件过大（和elementUI的差不多），大小为300多KB
+			这里刚好后端那边做了导出处理，并且加上了对应的样式处理，与之前的下载文件不同的地方在于，这里需要将之前查询的data数据存下来
+			在XMLHttpRequest请求里，在body中给后端传对应的数据即可
+		*/
+		download:function(){
+			var xhr = new XMLHttpRequest();
+			//Post请求,请求路径url,async(是否异步)
+			xhr.open('POST', process.env.VUE_APP_BASE_API + '/game/export', true);
+			//设置请求头参数的方式,如果没有可忽略此行代码
+			xhr.setRequestHeader("token",localStorage.getItem("token"));
+			xhr.setRequestHeader("uid",localStorage.getItem("uid"));
+			xhr.setRequestHeader("Content-Type","application/json;charset=utf-8");
+			//设置响应类型为 blob
+			xhr.responseType = 'blob';
+			//关键部分
+			xhr.onload = function (e) {
+				//如果请求执行成功
+				if (this.status == 200) {
+					const blob = this.response;
+					const filename = "results.xlsx";//
+					const link = document.createElement('a') // 创建a标签
+					link.download = filename // a标签添加属性
+					link.style.display = 'none'
+					link.href = URL.createObjectURL(blob)
+					document.body.appendChild(link)
+					link.click() // 执行下载
+					URL.revokeObjectURL(link.href) // 释放url
+					document.body.removeChild(link) // 释放标签
+				}
+				else{
+						alert('请求下载文件失败')
+				}
+			};
+			//发送请求
+			xhr.send(this.table.data);
+		},
+		//查询历史记录
+		historysearch:function(){
+			this.dialoghistorylist.Visible = true
+			var data = {}
+			this.$http.post(process.env.VUE_APP_BASE_API+'/game/history',
+			data,{headers:{'uid':localStorage.getItem("uid"),'token':localStorage.getItem("token")}}
+			).then(function(res){
+				if (res.body.code == 0){
+					this.dialoghistorylist.tabledata = res.body.data
+				}else if(res.body.code == 401){
+					this.$alert('登录超时，请重新登录', '提示', {
+					  confirmButtonText: '确定',
+					  callback: action => {
+						localStorage.clear()
+						window.location.href = "./login.html"
+					  }
+					})	
+				}else{
+					this.$message.error(res.body);
+				}
+			})
+		},
+		//初始化sql语句的显示
+		formatsqlstring:function(row,colunm){
+			return row.sqlstring.replace(/\?/g,"\'").replace(/#/g,"")
+		},
+		//前端分页 每页数据数切换
+		handleSizeChange:function(val){
+			this.dialoghistorylist.currentPage = 1;
+			this.dialoghistorylist.pageSize = val;
+		},
+		//前端分页 页数切换
+		handleCurrentChange:function(val){
+			this.dialoghistorylist.currentPage = val;
 		},
 	},
 }
