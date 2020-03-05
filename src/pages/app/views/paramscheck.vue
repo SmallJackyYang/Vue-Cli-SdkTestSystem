@@ -403,7 +403,7 @@ export default {
 			}else{
 				this.table.loading = true
 				this.table.checkevents = ''
-				var sql_temp = '#' + this.sqlfind.sql
+				var sql_temp = this.sqlfind.sql.replace(/\*/g,"#\*").replace(/from/ig,"#from").replace(/select/ig,"#select")
 				//将已经勾选的游戏事件checkedevents里的数据拼接为字符串格式，中间用，隔开
 				if (this.eventscheck.checkedevents.length != 0){
 					for (var i = 0; i <this.eventscheck.checkedevents.length; i++){
@@ -411,7 +411,6 @@ export default {
 					}
 					this.table.checkevents = this.table.checkevents.substr(1)
 				}
-				sql_temp = sql_temp.replace(/\*/g,"#\*").replace(/from/ig,"#from")
 				var data ={
 					db:'dana',
 					sql:sql_temp,

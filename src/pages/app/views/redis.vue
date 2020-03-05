@@ -8,12 +8,14 @@
 			  :header-cell-style="HeaderCellStyle" >
 			  	<el-table-column label="公共事件名" prop="sdkkey" min-width="10%" align="center">
 			  	</el-table-column>
-			  	<el-table-column label="专属字段" prop="sdkvalue" min-width="78%" align="center">    
+			  	<el-table-column label="专属字段" prop="sdkvalue" min-width="70%" align="center">    
 			  	</el-table-column>
+					<el-table-column label="平台" prop="plat" :formatter="formateplat" min-width="8%" align="center">
+					</el-table-column>
 			  	<el-table-column label="操作" prop="address" min-width="12%" align="center">
 						<template slot-scope="scope">
 							<el-button size="mini" type="warning" icon="el-icon-edit" @click="openediteventdialog(scope.$index, scope.row)">更新</el-button>
-							<el-button size="mini" type="danger" icon="el-icon-delete" @click="deleteevent(scope.$index, scope.row)">删除</el-button>
+							<el-button size="mini" type="danger" icon="el-icon-delete" @click="deleteevent(scope.$index, scope.row)" v-if="scope.row.sdkkey !='android_public'&&scope.row.sdkkey !='ios_public'">删除</el-button>
 						</template>
 			  	</el-table-column>
 			  </el-table>
@@ -26,33 +28,63 @@
 			:close-on-click-modal=false >
 		  <el-form ref="addeventdialogform" :model="addeventdialog" label-width="80px">
 			  <el-form-item label="事件名称">
-					<el-input v-model="addeventdialog.sdkkey" style="width: 520px;" placeholder="输入事件名称" clearable></el-input>
+					<el-input v-model="addeventdialog.sdkkey" style="width: 100%;" placeholder="输入事件名称" clearable></el-input>
 			  </el-form-item>
 			  <el-form-item label="字段参数">
-					<el-input v-model="addeventdialog.sdkvalue" style="width: 520px;" placeholder="输入需要事件需要检查的字段" clearable></el-input>
+					<el-input v-model="addeventdialog.sdkvalue" style="width: 100%;" placeholder="输入需要事件需要检查的字段" clearable></el-input>
 			  </el-form-item>
+				<el-form-item label="平台">
+				    <el-select v-model="addeventdialog.sdkplat" placeholder="请选择事件所属平台" style="width: 100%">
+				        <el-option
+				          v-for="item in addeventdialog.options"
+				          :key="item.value"
+				          :label="item.label"
+				          :value="item.value">
+				        </el-option>
+				      </el-select>
+				</el-form-item>
 		  </el-form>
 		  <span slot="footer" class="dialog-footer">
 		    <el-button @click="addeventdialog.Visible = false">取 消</el-button>
-		    <el-button type="primary" @click="addevent">确 定</el-button>
+		    <el-button type="primary" @click="addevent(addeventdialog.sdkkey,addeventdialog.sdkvalue,addeventdialog.sdkplat)">确 定</el-button>
 		  </span>
 		</el-dialog>
 		<el-dialog
 		  title="编辑公共事件"
 		  :visible.sync="editeventdialog.Visible"
-		  width="45%"
+		  width="35%"
 			:close-on-click-modal=false >
 		  <el-form ref="editeventdialogform" :model="editeventdialog" label-width="80px">
 			  <el-form-item label="事件名称">
-					<el-input v-model="editeventdialog.sdkkey" style="width: 700px;" placeholder="输入事件名称" :disabled="true"></el-input>
+					<el-input v-model="editeventdialog.sdkkey" style="width: 100%;" placeholder="输入事件名称" :disabled="true"></el-input>
 			  </el-form-item>
 				<el-form-item label="字段参数">
-					<el-input v-model="editeventdialog.sdkvalue" style="width: 700px;" placeholder="输入需要事件需要检查的字段" clearable></el-input>
+					<el-input v-model="editeventdialog.sdkvalue" style="width: 100%;" placeholder="输入需要事件需要检查的字段" clearable></el-input>
+				</el-form-item>
+				<el-form-item label="平台" v-if="editeventdialog.sdkkey !='android_public'&&editeventdialog.sdkkey !='ios_public'">
+				    <el-select  v-model="editeventdialog.sdkplat" placeholder="请选择事件所属平台" style="width: 100%">
+				        <el-option
+				          v-for="item in editeventdialog.options"
+				          :key="item.value"
+				          :label="item.label"
+				          :value="item.value">
+				        </el-option>
+				      </el-select>
+				</el-form-item>
+				<el-form-item v-else label="平台">
+				    <el-select  v-model="editeventdialog.sdkplat" placeholder="请选择事件所属平台" disabled style="width: 100%">
+				        <el-option
+				          v-for="item in editeventdialog.options"
+				          :key="item.value"
+				          :label="item.label"
+				          :value="item.value">
+				        </el-option>
+				      </el-select>
 				</el-form-item>
 		  </el-form>
 		  <span slot="footer" class="dialog-footer">
 		    <el-button @click="editeventdialog.Visible = false">取 消</el-button>
-		    <el-button type="primary" @click="updateevent">确 定</el-button>
+		    <el-button type="primary" @click="addevent(editeventdialog.sdkkey,editeventdialog.sdkvalue,editeventdialog.sdkplat)">确 定</el-button>
 		  </span>
 		</el-dialog>
 	</div>
@@ -72,21 +104,49 @@ export default {
 				添加公共事件模态框的数据绑定
 				sdkkey为事件名称
 				sdkvalue为事件的专属字段
+				sdkplat 为事件所属平台 默认双平台
 			*/
 			addeventdialog:{
 				Visible:false,
 				sdkkey:'',
 				sdkvalue:'',
+				sdkplat:2,
+				options: [
+					{
+					  value: 0,
+					  label: '安卓'
+					},{
+					  value: 1,
+					  label: 'iOS'
+					},{
+					  value: 2,
+					  label: '安卓&iOS'
+					}
+				],
 			},
 			/*
 				编辑公共事件模态框的数据绑定
 				sdkkey为事件名称
 				sdkvalue为事件的专属字段
+				sdkplat 为事件的所属平台 由传进来的值对应选择
 			*/
 			editeventdialog:{
 				Visible:false,
 				sdkkey:'',
 				sdkvalue:'',
+				sdkplat:'',
+				options: [
+					{
+					  value: 0,
+					  label: '安卓'
+					},{
+					  value: 1,
+					  label: 'iOS'
+					},{
+					  value: 2,
+					  label: '安卓&iOS'
+					}
+				],
 			},
 		}
 	},
@@ -104,10 +164,11 @@ export default {
 			this.editeventdialog.Visible = true
 			this.editeventdialog.sdkkey = row.sdkkey
 			this.editeventdialog.sdkvalue = row.sdkvalue
+			this.editeventdialog.sdkplat = row.plat
 		},
 		//添加公共事件与其专属字段的函数
-		addevent:function(){
-			if(this.addeventdialog.sdkkey.trim().length == 0 ){
+		addevent:function(sdkkey,sdkvalue,sdkplat){
+			if(sdkkey.trim().length == 0 ){
 				this.$message({
 				  message: '事件名不能为空',
 				  duration: 2000,
@@ -115,50 +176,17 @@ export default {
 				})
 			}else{
 				var data = {
-					sdkkey : this.addeventdialog.sdkkey,
-					sdkvalue : this.addeventdialog.sdkvalue,
+					sdkkey : sdkkey,
+					sdkvalue : sdkvalue,
+					plat:sdkplat
 				}
 				this.$http.post(process.env.VUE_APP_BASE_API+'/key/addkey',
 				data,{headers:{'uid':localStorage.getItem("uid"),'token':localStorage.getItem("token")}}
 				).then(function(res){
 					if (res.body.code == 0){
-						this.$message.success('添加成功')
+						this.$message.success('成功')
 						//添加成功后关闭模态框，并重新执行查询，以便更新表格
 						this.addeventdialog.Visible = false
-						this.find()
-					}else if(res.body.code == 401){
-						this.$alert('登录超时，请重新登录', '提示', {
-						  confirmButtonText: '确定',
-						  callback: action => {
-							localStorage.clear()
-							window.location.href = "./login.html"
-						  }
-						})	
-					}else{
-						this.$message.error(res.body);
-					}
-				})
-			}
-		},
-		//编辑公共事件与其专属字段的函数
-		updateevent:function(){
-			if(this.editeventdialog.sdkkey.trim().length == 0 ){
-				this.$message({
-				  message: '事件名不能为空',
-				  duration: 2000,
-				  type:'error'
-				})
-			}else{
-				var data = {
-					sdkkey : this.editeventdialog.sdkkey,
-					sdkvalue : this.editeventdialog.sdkvalue,
-				}
-				this.$http.post(process.env.VUE_APP_BASE_API+'/key/addkey',
-				data,{headers:{'uid':localStorage.getItem("uid"),'token':localStorage.getItem("token")}}
-				).then(function(res){
-					if (res.body.code == 0){
-						this.$message.success('更新成功')
-						//更新成功后关闭模态框，并重新执行查询，以便更新表格
 						this.editeventdialog.Visible = false
 						this.find()
 					}else if(res.body.code == 401){
@@ -229,6 +257,16 @@ export default {
 					this.$message.error(res.body);
 				}
 			})
+		},
+		//平台名字格式化
+		formateplat:function(row,column){
+			if(row.plat == 0){
+				return '安卓'
+			}else if(row.plat == 1){
+				return 'iOS'
+			}else{
+				return '安卓&iOS'
+			}
 		},
 	},
 }
