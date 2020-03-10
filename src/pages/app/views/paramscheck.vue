@@ -72,7 +72,7 @@
 			<el-tab-pane label="SQL查询结果" name="first">
 				<el-row>
 					<el-table id="out-table" stripe border :data="table.tabledata"
-					style="overflow-x: auto;width:100%"
+					style="overflow-x: auto;width:99.9%"
 					:max-height="500"
 					:header-cell-style="HeaderCellStyle"
 					:cell-style="cellStyle"
@@ -84,6 +84,17 @@
 							<el-table-column :key="col" :prop="col" :label="col" :min-width="135" align="center"  show-overflow-tooltip></el-table-column>
 						</template>
 					</el-table>
+					<!--size-change 为切换每页最大展示数触发的函数，current-change 为切换当前页数触发的函数-->
+					<!--page-sizes为可提供的每页展示数选择-->
+					<el-pagination
+							@size-change="handleserverSizeChange" 
+							@current-change="handleserverPageNumberChange"
+							:current-page="table.pagenumber"
+							:page-sizes="[30, 50, 100]"
+							:page-size="table.pagesize"
+							layout="total, sizes, prev, pager, next, jumper"
+							:total="table.total">
+					</el-pagination>
 				</el-row>
 			</el-tab-pane>
 			<el-tab-pane label="数据结果统计" name="second">
@@ -206,6 +217,8 @@
 
 <script>
 import {formatDate,header}  from '../../../static/js/custom.js'
+// import CryptoJS from 'crypto-js'
+// let Base64 = require('js-base64').Base64
 // import XLSX from 'xlsx'
 // import FileSaver from 'file-saver'
 export default {
@@ -247,7 +260,7 @@ export default {
 			*/
 			sqlfind:{
 				database:'',
-				sql:'',	
+				sql:'',
 			},
 			/*
 				保存sql语句模态框 数据绑定
@@ -290,7 +303,11 @@ export default {
 				tablecheckdata:[],
 				loading:false,
 				checkevents:'',
-				data:'',
+				// data:'',
+				total:0,
+				pagesize:30,
+				pagenumber:1,
+				check:1,
 			},
 			//用于获取数据统计结果的table
 			counttable:{
@@ -403,7 +420,7 @@ export default {
 			}else{
 				this.table.loading = true
 				this.table.checkevents = ''
-				var sql_temp = this.sqlfind.sql.replace(/\*/g,"#\*").replace(/from/ig,"#from").replace(/select/ig,"#select")
+				var sql_temp = this.sqlfind.sql.replace(/\*/g,"#\*").replace(/from/ig,"#from").replace(/select/ig,"#select").replace(/\(/g,"#\(")
 				//将已经勾选的游戏事件checkedevents里的数据拼接为字符串格式，中间用，隔开
 				if (this.eventscheck.checkedevents.length != 0){
 					for (var i = 0; i <this.eventscheck.checkedevents.length; i++){
@@ -416,10 +433,14 @@ export default {
 					sql:sql_temp,
 					eventid:this.table.checkevents,
 					gameplat:this.gameplat.value,
+					check:this.table.check,
+					pagesize:this.table.pagesize,
+					pagenum:this.table.pagenumber
 				}
 				this.$http.post(process.env.VUE_APP_BASE_API+'/game/checkdata',
 				data,{headers:{'uid':localStorage.getItem("uid"),'token':localStorage.getItem("token")}}
 				).then(function(res){
+					this.table.check = 1
 					if (res.body.code == 0){
 						//data为空，则不需要进行其余操作，清除上一次的数据后，提示即可
 						if(res.body.data == null){
@@ -437,8 +458,7 @@ export default {
 							this.table.cols = res.body.data.tablekey.split(',')
 							this.table.tabledata = res.body.data.danadata
 							this.counttable.tabledata.push(res.body.data.extraevent)
-							this.table.data = JSON.stringify(res.body.data)
-							// console.log(this.table.data)
+							this.table.total = res.body.data.total
 						}
 					}else if(res.body.code == 401){
 						this.table.loading = false
@@ -466,8 +486,7 @@ export default {
 				});
 			}else{
 				var sqltemp = '#' + this.sqlfind.sql
-				sqltemp = sqltemp.replace(/\*/g,"#\*")
-				sqltemp = sqltemp.replace(/from/ig,"#from")
+				sqltemp = sqltemp.replace(/\*/g,"#\*").replace(/from/ig,"#from").replace(/select/ig,"#select").replace(/\(/g,"#\(")
 				var data = {
 					title:this.dialogsave.name,
 					db:'dana',
@@ -689,7 +708,7 @@ export default {
 				}
 			};
 			//发送请求
-			xhr.send(this.table.data);
+			xhr.send();
 		},
 		//查询历史记录
 		historysearch:function(){
@@ -725,6 +744,19 @@ export default {
 		//前端分页 页数切换
 		handleCurrentChange:function(val){
 			this.dialoghistorylist.currentPage = val;
+		},
+		//后端分页 每页数据数切换
+		handleserverSizeChange:function(val){
+			this.table.pagenumber = 1
+			this.table.pagesize = val
+			this.table.check = 0
+			this.search()
+		},
+		//后端分页 每页数据数切换
+		handleserverPageNumberChange:function(val){
+			this.table.pagenumber = val
+			this.table.check = 0
+			this.search()
 		},
 	},
 }
