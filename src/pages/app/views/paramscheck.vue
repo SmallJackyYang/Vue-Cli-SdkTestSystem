@@ -206,7 +206,7 @@
 				@size-change="handleSizeChange" 
 				@current-change="handleCurrentChange"
 				:current-page="dialoghistorylist.currentPage"
-				:page-sizes="[5, 10, 20]"
+				:page-sizes="[10, 20]"
 				:page-size="dialoghistorylist.pageSize"      
 				layout="total, sizes, prev, pager, next, jumper"
 				:total="dialoghistorylist.tabledata.length">
@@ -218,7 +218,7 @@
 <script>
 import {formatDate,header}  from '../../../static/js/custom.js'
 // import CryptoJS from 'crypto-js'
-// let Base64 = require('js-base64').Base64
+let Base64 = require('js-base64').Base64
 // import XLSX from 'xlsx'
 // import FileSaver from 'file-saver'
 export default {
@@ -295,7 +295,10 @@ export default {
 				tablecheckdata 服务端获取的，校验事件参数结果的返回，用于渲染table使用，标出缺少的字段 颜色展示
 				loading 点击查询，给table置为 loading状态
 				checkevents 字符串拼接显示的已勾选要检查的事件
-				data 保存查询时后端返回的data所有数据，并以json字符串形势保存，在导出excel时传递给后端时使用
+				total 后端分页 存储数据总数
+				pagesize  后端分页 一页的数据数
+				pagenumber 后端分页 当前页数
+				check 用于判断是查询还是翻页，1/查询，0/翻页，默认查询，执行翻页操作时再赋值修改
 			*/
 			table:{
 				cols:[],
@@ -303,7 +306,6 @@ export default {
 				tablecheckdata:[],
 				loading:false,
 				checkevents:'',
-				// data:'',
 				total:0,
 				pagesize:30,
 				pagenumber:1,
@@ -338,7 +340,7 @@ export default {
 				Visible:false,
 				tabledata:[],
 				currentPage:1,
-				pageSize: 5
+				pageSize: 10
 			},
 		}
 	},
@@ -420,7 +422,9 @@ export default {
 			}else{
 				this.table.loading = true
 				this.table.checkevents = ''
-				var sql_temp = this.sqlfind.sql.replace(/\*/g,"#\*").replace(/from/ig,"#from").replace(/select/ig,"#select").replace(/\(/g,"#\(")
+				// var sql_temp = this.sqlfind.sql.replace(/\*/g,"#\*").replace(/from/ig,"#from").replace(/select/ig,"#select").replace(/\(/g,"#\(")
+				//将单引号 ' 都替换为url格式编码，即&#39;以便之后base64编码使用
+				var sql_temp = this.sqlfind.sql.replace(/\'/g,"&#39;")
 				//将已经勾选的游戏事件checkedevents里的数据拼接为字符串格式，中间用，隔开
 				if (this.eventscheck.checkedevents.length != 0){
 					for (var i = 0; i <this.eventscheck.checkedevents.length; i++){
@@ -429,8 +433,10 @@ export default {
 					this.table.checkevents = this.table.checkevents.substr(1)
 				}
 				var data ={
-					db:'dana',
-					sql:sql_temp,
+					// db:'dana',
+					//db 与sql 参数，需要使用base64编码后发送
+					db:Base64.encode('dana'),
+					sql:Base64.encode(sql_temp),
 					eventid:this.table.checkevents,
 					gameplat:this.gameplat.value,
 					check:this.table.check,
@@ -440,6 +446,7 @@ export default {
 				this.$http.post(process.env.VUE_APP_BASE_API+'/game/checkdata',
 				data,{headers:{'uid':localStorage.getItem("uid"),'token':localStorage.getItem("token")}}
 				).then(function(res){
+					//请求成功后，需要把check置为默认值，这样便可以区分是点击了查询还是在原查询数据上翻页
 					this.table.check = 1
 					if (res.body.code == 0){
 						//data为空，则不需要进行其余操作，清除上一次的数据后，提示即可
@@ -485,12 +492,15 @@ export default {
 				  type:'error'
 				});
 			}else{
-				var sqltemp = '#' + this.sqlfind.sql
-				sqltemp = sqltemp.replace(/\*/g,"#\*").replace(/from/ig,"#from").replace(/select/ig,"#select").replace(/\(/g,"#\(")
+				// var sql_temp = '#' + this.sqlfind.sql
+				// sql_temp = sqltemp.replace(/\*/g,"#\*").replace(/from/ig,"#from").replace(/select/ig,"#select").replace(/\(/g,"#\(")
+				//将单引号 ' 都替换为url格式编码，即&#39;以便之后base64编码使用
+				var sql_temp = this.sqlfind.sql.replace(/\'/g,"&#39;")
 				var data = {
 					title:this.dialogsave.name,
-					db:'dana',
-					sqlstring:sqltemp,
+					// db:'dana',
+					db:Base64.encode('dana'),
+					sqlstring:Base64.encode(sql_temp),
 				}
 				this.$http.post(process.env.VUE_APP_BASE_API+'/dana/savesql',
 				data,{headers:{'uid':localStorage.getItem("uid"),'token':localStorage.getItem("token")}}
@@ -604,7 +614,10 @@ export default {
 		},
 		//打开sql语句操作
 		handleOpen:function(index,row){
-			this.sqlfind.sql = row.sqlstring.replace(/\?/g,"\'").replace(/#/g,"")
+			// this.sqlfind.sql = row.sqlstring.replace(/\?/g,"\'").replace(/#/g,"")
+			// 后端返回的是 base64编码过的，因此需要先解码，后将url格式的&#39; 全部替换成单引号
+			this.sqlfind.sql = Base64.decode(row.sqlstring).replace(/&#39;/g,"\'")
+			// this.sqlfind.sql.replace(/\'/g,"&#39;")
 			this.dialogdetail.Visible = false
 			this.dialoghistorylist.Visible = false
 		},
@@ -734,7 +747,9 @@ export default {
 		},
 		//初始化sql语句的显示
 		formatsqlstring:function(row,colunm){
-			return row.sqlstring.replace(/\?/g,"\'").replace(/#/g,"")
+			// return row.sqlstring.replace(/\?/g,"\'").replace(/#/g,"")
+			// 后端返回的是 base64编码过的，因此需要先解码，后将url格式的&#39; 全部替换成单引号
+			return Base64.decode(row.sqlstring).replace(/&#39;/g,"\'")
 		},
 		//前端分页 每页数据数切换
 		handleSizeChange:function(val){
