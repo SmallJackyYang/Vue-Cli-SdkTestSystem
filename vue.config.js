@@ -4,6 +4,7 @@ const IS_PROD = ["production", "prod"].includes(process.env.NODE_ENV);
 //引用gzip压缩js的方法
 const CompressionWebpackPlugin = require('compression-webpack-plugin')
 const productionGzipExtensions = /\.(js|css|json|txt|html|ico|svg)(\?.*)?$/i;
+// const TerserPlugin = require('terser-webpack-plugin')
 
 module.exports = {
 	publicPath:'./',  //资源路径 不改的话dist打包出来找不到资源
@@ -52,6 +53,10 @@ module.exports = {
 		const plugins = [];
 		//生产环境确认
 		if (IS_PROD) {
+			//production版本console.log 打包时 自动注释
+			config.optimization.minimizer[0].options.terserOptions.compress.drop_console = true
+			
+			//压缩
 			plugins.push(
 				//gzip压缩
 				new CompressionWebpackPlugin({
