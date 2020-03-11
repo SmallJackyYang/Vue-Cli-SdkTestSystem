@@ -2,23 +2,23 @@
 	<div id="upcase">
 		<el-form ref="uploadform" :model="uploadform" :rules="rules" label-width="110px" label-position="left">
 			<el-form-item label="用例名称" prop="casename">
-			<el-col :span="7">
-				<el-input v-model="uploadform.casename" ></el-input>
+			<el-col :span="11">
+				<el-input v-model="uploadform.casename" style="width: 350px;"></el-input>
 			</el-col>
 			</el-form-item>
 			<el-form-item label="SDK版本号" prop="sdkname">
-			<el-col :span="7">
-				<el-input v-model="uploadform.sdkname" ></el-input>
+			<el-col :span="11">
+				<el-input v-model="uploadform.sdkname" style="width: 350px;"></el-input>
 			</el-col>
 			</el-form-item>
 			<el-form-item label="设备ID" prop="didname">
-			<el-col :span="7">
-				<el-input v-model="uploadform.didname"></el-input>
+			<el-col :span="11">
+				<el-input v-model="uploadform.didname" style="width: 350px;"></el-input>
 			</el-col>
 			</el-form-item>
 			<el-form-item label="Excel文件：" prop="datalist">
 			<el-checkbox-group v-model="uploadform.datalist"></el-checkbox-group>
-			<el-col :span="7">
+			<el-col :span="11">
 				<el-upload
 					class="upload-demo"
 					ref="upload"
