@@ -11,12 +11,14 @@
 					<h3 style="color: #409EFF;margin-left: 180px;">OA账户登录</h3>
 					<el-divider></el-divider>
 					<!-- 表单包含验证机制rules,表单绑定的表格数据在ruleForm中 -->
-					<el-form :model="ruleForm" :rules="rules" ref="ruleForm" label-width="80px">
-						<el-form-item label="用户名" prop="username">
-							<el-input v-model="ruleForm.username" placeholder="请输入OA账户" clearable></el-input>
+					<el-form :model="ruleForm" :rules="rules" ref="ruleForm" label-width="80px" >
+						<el-form-item label="用户名" prop="username" >
+							<el-input v-model="ruleForm.username" placeholder="请输入OA账户" clearable style="width: 350px;">
+								<template slot="append">@kingnet.com</template>
+							</el-input>
 						</el-form-item>
 						<el-form-item label="密码" prop="password">
-							<el-input type="password" v-model="ruleForm.password" placeholder="请输入密码" clearable show-password></el-input>
+							<el-input type="password" v-model="ruleForm.password" placeholder="请输入密码" clearable show-password style="width: 350px;"></el-input>
 						</el-form-item>
 						<el-form-item>
 						<!-- 记住密码，使用checkbox进行判断 -->
@@ -94,7 +96,7 @@ export default {
 					//nickname 真实姓名，用于系统中展示
 					localStorage.setItem("nickname",res.body.data.nickname)		
 					// 登录成功后正常跳转到用例管理界面
-					window.location.href = "system.html#/upcase";
+					window.location.href = "system.html#/paramscheck";
 				} 
 				// code =13 代表 用户名或密码错误
 				else if(res.body.code == 13){
@@ -141,8 +143,8 @@ export default {
 		},
 		//清空表单
 		resetForm:function(formName) {
-		this.ruleForm.checked = false //记住密码勾选框置为false
-		  this.$refs[formName].resetFields() //input都清空
+			this.ruleForm.checked = false //记住密码勾选框置为false
+				this.$refs[formName].resetFields() //input都清空
 		}
 	},
 }
