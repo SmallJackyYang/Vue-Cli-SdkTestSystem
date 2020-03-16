@@ -241,7 +241,7 @@ export default {
 			/*
 				编辑事件模态框
 				event 编辑的游戏事件名称
-				filed 编辑的游戏事件 需要校验的字段参数
+				field 编辑的游戏事件 需要校验的字段参数
 				eventid 编辑的游戏事件对应的id
 			*/
 			editeventdialog:{
