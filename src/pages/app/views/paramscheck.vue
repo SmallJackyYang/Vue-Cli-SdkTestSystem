@@ -52,18 +52,20 @@
 				<el-button type="primary" size="small" style="margin-left: 20px;" @click="dialogsave.Visible = true">
 					<i class="el-icon-document-add"></i>  保存</el-button>
 				<el-button type="primary" size="small" @click="sqlserchdetail"><i class="el-icon-document"></i>  我的查询</el-button>
-				<el-button type="primary" size="small" style="float: right;width: 100px;" @click="search">
+				<el-checkbox v-model="sqlfind.checked" style="margin-left: 10px;">Limit 1000</el-checkbox>
+				<el-button type="primary" size="small" style="float: right;width: 100px;margin-left: 10px;" @click="search(1,1)">
 					<i class="el-icon-search" ></i>  查询</el-button>
 				<el-button type="warning" size="small" style="float: right;width: 100px;" @click="historysearch">
 					<i class="el-icon-search" ></i>  历史查询</el-button>
 				<el-button v-if="table.tabledata.length>0" type="primary" size="small" style="float: right;" @click="download">
 					<i class="el-icon-download"></i>  一键导出</el-button>
-					<el-input
+					<textarea ref="mycode" class="codesql" v-model="sqlfind.sql" style="height:50px;width:99.9%;"></textarea>
+			<!-- 		<el-input
 						type="textarea"
 						:rows="3"
 						placeholder="请在此输入sql语句"
 						v-model="sqlfind.sql" style="margin-top: 10px;">
-					</el-input>
+					</el-input> -->
 				</div>
 			</el-col>
 		</el-row>
@@ -107,9 +109,9 @@
 					element-loading-text="拼命加载中"
 					element-loading-spinner="el-icon-loading"
 					element-loading-background="rgba(0, 0, 0, 0.5)">
-						<el-table-column label="多发的事件" prop="extra" min-width="20%" align="center" show-overflow-tooltip>
+						<el-table-column label="多发的事件" prop="extra" min-width="40%" align="center" >
 						</el-table-column>
-						<el-table-column label="少发的事件" prop="lack" min-width="80%" align="center" show-overflow-tooltip>    
+						<el-table-column label="少发的事件" prop="lack" min-width="60%" align="center" >
 						</el-table-column>
 					</el-table>
 				</el-row>
@@ -216,11 +218,20 @@
 </template>
 
 <script>
-import {formatDate,header}  from '../../../static/js/custom.js'
-// import CryptoJS from 'crypto-js'
-let Base64 = require('js-base64').Base64
-// import XLSX from 'xlsx'
-// import FileSaver from 'file-saver'
+	import {formatDate,header}  from '../../../static/js/custom.js'
+	let Base64 = require('js-base64').Base64
+	import "codemirror/theme/ambiance.css"
+	import "codemirror/lib/codemirror.css"
+	import "codemirror/addon/hint/show-hint.css"
+ 
+	let CodeMirror = require("codemirror/lib/codemirror")
+	require("codemirror/addon/edit/matchbrackets")
+	require("codemirror/addon/selection/active-line")
+	require("codemirror/mode/sql/sql")
+	require("codemirror/addon/hint/show-hint")
+	require("codemirror/addon/hint/sql-hint")
+
+
 export default {
   name: 'paramescheck',
 	data:function(){
@@ -261,6 +272,7 @@ export default {
 			sqlfind:{
 				database:'',
 				sql:'',
+				checked:true,
 			},
 			/*
 				保存sql语句模态框 数据绑定
@@ -347,6 +359,35 @@ export default {
 	mounted() {
 		//通过校验，则发送请求获取游戏库里的数据
 		this.getgamelist()
+		var that= this;
+		let mime = 'text/x-mariadb'
+		let theme = 'ambiance'//设置主题，不设置的会使用默认主题
+		window.editor = CodeMirror.fromTextArea(this.$refs.mycode, {
+			mode: mime,//选择对应代码编辑器的语言，我这边选的是数据库，根据个人情况自行设置即可
+			indentWithTabs: true,
+			smartIndent: true,
+			lineNumbers: true,
+			matchBrackets: true,
+			lineWrapping: true,
+			theme: theme,
+			// autofocus: true,
+			extraKeys: {'Ctrl': 'autocomplete'},//自定义快捷键
+			hintOptions: {//自定义提示选项
+				tables: {
+					dana: ['platform_overseakr','event_mg','event_ios_mg'],
+					usercenter: ['dana_usercenter'],
+					did:[],
+					ds:[],
+				},
+			}
+		})
+		// 代码自动提示功能，记住使用cursorActivity事件不要使用change事件，这是一个坑，那样页面直接会卡死
+		editor.on('inputRead', function () {
+			editor.showHint()
+		})
+		editor.on('update', function () {
+			that.sqlfind.sql = editor.getValue()
+		})
 	},
 	methods:{
 		//获取所有的游戏
@@ -412,19 +453,23 @@ export default {
 			})
 		},
 		//检查字段!!!!!!
-		search:function(){
-			if (this.sqlfind.sql.trim().length == 0){
+		search:function(pagenumber,check){
+			if (this.sqlfind.sql.trim().length == 0 && this.table.check == 1){
 			    this.$notify.error({
 				  title: '错误',
 				  message: '数据库名称orSQL语句不能为空，请重新输入',
 				  duration: 2000,
 				});
 			}else{
+				this.table.pagenumber = pagenumber
 				this.table.loading = true
 				this.table.checkevents = ''
 				// var sql_temp = this.sqlfind.sql.replace(/\*/g,"#\*").replace(/from/ig,"#from").replace(/select/ig,"#select").replace(/\(/g,"#\(")
 				//将单引号 ' 都替换为url格式编码，即&#39;以便之后base64编码使用
 				var sql_temp = this.sqlfind.sql.replace(/\'/g,"&#39;")
+				if(sql_temp.indexOf("limit") == -1){
+					sql_temp += " limit 1000"
+				}
 				//将已经勾选的游戏事件checkedevents里的数据拼接为字符串格式，中间用，隔开
 				if (this.eventscheck.checkedevents.length != 0){
 					for (var i = 0; i <this.eventscheck.checkedevents.length; i++){
@@ -439,15 +484,13 @@ export default {
 					sql:Base64.encode(sql_temp),
 					eventid:this.table.checkevents,
 					gameplat:this.gameplat.value,
-					check:this.table.check,
+					check:check,
 					pagesize:this.table.pagesize,
-					pagenum:this.table.pagenumber
+					pagenum:pagenumber,
 				}
 				this.$http.post(process.env.VUE_APP_BASE_API+'/game/checkdata',
 				data,{headers:{'uid':localStorage.getItem("uid"),'token':localStorage.getItem("token")}}
 				).then(function(res){
-					//请求成功后，需要把check置为默认值，这样便可以区分是点击了查询还是在原查询数据上翻页
-					this.table.check = 1
 					if (res.body.code == 0){
 						//data为空，则不需要进行其余操作，清除上一次的数据后，提示即可
 						if(res.body.data == null){
@@ -459,7 +502,7 @@ export default {
 						}else{
 							//将table loading状态置为false，将渲染table的数据都赋值给对应的绑定参数,counttable因为使用push函数，因此每次查询的时候，先置为空
 							this.table.loading = false
-							this.$message.success('查询成功')
+							// this.$message.success('查询成功')
 							this.counttable.tabledata = []
 							this.table.tablecheckdata = res.body.data.checkdata
 							this.table.cols = res.body.data.tablekey.split(',')
@@ -492,8 +535,6 @@ export default {
 				  type:'error'
 				});
 			}else{
-				// var sql_temp = '#' + this.sqlfind.sql
-				// sql_temp = sqltemp.replace(/\*/g,"#\*").replace(/from/ig,"#from").replace(/select/ig,"#select").replace(/\(/g,"#\(")
 				//将单引号 ' 都替换为url格式编码，即&#39;以便之后base64编码使用
 				var sql_temp = this.sqlfind.sql.replace(/\'/g,"&#39;")
 				var data = {
@@ -594,11 +635,13 @@ export default {
 			当column.label在checkkey中包含时，则返回颜色pink
 		*/
 		cellStyle:function({row,column,rowIndex,columnIndex}){
-			//nullkey为空就不需要处理了，直接略过
-			if(this.table.tablecheckdata[rowIndex].nullkey != null && this.table.tablecheckdata[rowIndex].nullkey.checkkey != null ){
-				//indexof方法是返回该字符在字符串中第一次出现的位置，如果存在，则返回一个位置下标；该字符串中没有该字符，则会返回-1，因此这里用> -1 判断，即存在即可
-				if(this.table.tablecheckdata[rowIndex].nullkey.checkkey[column.label]  == 1 ){
-					return 'background:#F56C6C'
+			if( this.table.tablecheckdata != null){
+				//nullkey为空就不需要处理了，直接略过
+				if(this.table.tablecheckdata[rowIndex].nullkey != null && this.table.tablecheckdata[rowIndex].nullkey.checkkey != null){
+					//indexof方法是返回该字符在字符串中第一次出现的位置，如果存在，则返回一个位置下标；该字符串中没有该字符，则会返回-1，因此这里用> -1 判断，即存在即可
+					if(this.table.tablecheckdata[rowIndex].nullkey.checkkey[column.label]  == 1 ){
+						return 'background:#F56C6C'
+					}
 				}
 			}
 		},
@@ -614,10 +657,10 @@ export default {
 		},
 		//打开sql语句操作
 		handleOpen:function(index,row){
-			// this.sqlfind.sql = row.sqlstring.replace(/\?/g,"\'").replace(/#/g,"")
+		
 			// 后端返回的是 base64编码过的，因此需要先解码，后将url格式的&#39; 全部替换成单引号
 			this.sqlfind.sql = Base64.decode(row.sqlstring).replace(/&#39;/g,"\'")
-			// this.sqlfind.sql.replace(/\'/g,"&#39;")
+			editor.setValue(this.sqlfind.sql)
 			this.dialogdetail.Visible = false
 			this.dialoghistorylist.Visible = false
 		},
@@ -765,13 +808,13 @@ export default {
 			this.table.pagenumber = 1
 			this.table.pagesize = val
 			this.table.check = 0
-			this.search()
+			this.search(this.table.pagenumber,this.table.check)
 		},
 		//后端分页 每页数据数切换
 		handleserverPageNumberChange:function(val){
 			this.table.pagenumber = val
 			this.table.check = 0
-			this.search()
+			this.search(this.table.pagenumber,this.table.check)
 		},
 	},
 }
