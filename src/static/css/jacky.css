@@ -28,7 +28,7 @@ line-height: 60px;
 background-color: rgb(233, 238, 243);
 /* background-color: #F4F4F5; */
 color: #333;
-text-align: center;
+/* text-align: center; */
 /* line-height: 200px; */
 /* border-radius: 5px; */
 /* background-color: #324157; */
@@ -137,11 +137,12 @@ body .el-table th.gutter{
 }
 
 element.style{
-padding-left: 20px;
+/* padding-left: 20px; */
 color: rgb(84, 2, 90) !important;
 background-color: rgb(230, 153, 0) !important;
 }
-/* 
-.el-menu-item.is-active {
-   background-color: rgb(240, 240, 240) !important;
-} */
+
+.CodeMirror {
+    margin-top: 10px;
+		height: 150px !important;
+}
