@@ -15,7 +15,27 @@ function header() {
 	return "text-align:center;color:#606266;background:#eef1f6;font-size:15px"
 }
 
+//将单引号 ' 都替换为url格式编码，即&#39;以便之后base64编码使用；将from_unixtime转成#from_unixtime
+function setString(sql){
+	sql = sql.replace(/\'/g,"&#39;")
+	if(sql.toLocaleLowerCase().indexOf("from_unixtime") != -1){
+		sql = sql.replace(/from_unixtime/gi,"#from_unixtime")
+	}
+	if(sql.toLocaleLowerCase().indexOf("limit") == -1){
+		sql += " limit 1000"
+	}
+	return sql
+}
+
+//将&#39转换成’ ，将#from_unixtime转成from_unixtime
+function getString(sql){
+	sql = sql.replace(/&#39;/g,"\'").replace(/#from_unixtime/gi,"from_unixtime")
+	return sql
+}
+
 export{
 	formatDate,
-	header
+	header,
+	setString,
+	getString
 }

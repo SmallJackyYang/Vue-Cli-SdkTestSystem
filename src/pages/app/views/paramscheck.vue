@@ -53,7 +53,7 @@
 					<i class="el-icon-document-add"></i>  保存</el-button>
 				<el-button type="primary" size="small" @click="sqlserchdetail"><i class="el-icon-document"></i>  我的查询</el-button>
 				<el-checkbox v-model="sqlfind.checked" style="margin-left: 10px;">Limit 1000</el-checkbox>
-				<el-button type="primary" size="small" style="float: right;width: 100px;margin-left: 10px;" @click="search(1,1)">
+				<el-button type="primary" size="small" style="float: right;width: 100px;margin-left: 10px;" @click="search(1,1)" :loading=sqlfind.loading>
 					<i class="el-icon-search" ></i>  查询</el-button>
 				<el-button type="warning" size="small" style="float: right;width: 100px;" @click="historysearch">
 					<i class="el-icon-search" ></i>  历史查询</el-button>
@@ -218,12 +218,15 @@
 </template>
 
 <script>
-	import {formatDate,header}  from '../../../static/js/custom.js'
+	import {formatDate,header,setString,getString}  from '../../../static/js/custom.js'
+	
+	//导入Base64加密
 	let Base64 = require('js-base64').Base64
+	
+	//导入codemirror需要使用的文件
 	import "codemirror/theme/ambiance.css"
 	import "codemirror/lib/codemirror.css"
 	import "codemirror/addon/hint/show-hint.css"
- 
 	let CodeMirror = require("codemirror/lib/codemirror")
 	require("codemirror/addon/edit/matchbrackets")
 	require("codemirror/addon/selection/active-line")
@@ -268,11 +271,13 @@ export default {
 				sql查询的参数
 				database 查询的数据库名字
 				sql sql查询的语句
+				checked 用于确认是否勾选在查询语句末尾添加limit 1000
 			*/
 			sqlfind:{
 				database:'',
 				sql:'',
 				checked:true,
+				loading:false,
 			},
 			/*
 				保存sql语句模态框 数据绑定
@@ -359,8 +364,14 @@ export default {
 	mounted() {
 		//通过校验，则发送请求获取游戏库里的数据
 		this.getgamelist()
+		
+		/*
+			涉及到使用sql语句查询，为增加体验，使用第三方库codemirror
+			功能有 自动补全、输入提示、行号显示
+			可替换主题（需要import对应的主体css文件，比如这里用的是ambiance）
+		*/
 		var that= this;
-		let mime = 'text/x-mariadb'
+		let mime = 'text/x-mariadb' //代码输入框支持语言
 		let theme = 'ambiance'//设置主题，不设置的会使用默认主题
 		window.editor = CodeMirror.fromTextArea(this.$refs.mycode, {
 			mode: mime,//选择对应代码编辑器的语言，我这边选的是数据库，根据个人情况自行设置即可
@@ -370,7 +381,6 @@ export default {
 			matchBrackets: true,
 			lineWrapping: true,
 			theme: theme,
-			// autofocus: true,
 			extraKeys: {'Ctrl': 'autocomplete'},//自定义快捷键
 			hintOptions: {//自定义提示选项
 				tables: {
@@ -378,13 +388,15 @@ export default {
 					usercenter: ['dana_usercenter'],
 					did:[],
 					ds:[],
+					'format_datetime(from_unixtime(timestamp/1000),\'yyyy-MM-dd HH:mm:ss\')':[],
 				},
 			}
 		})
-		// 代码自动提示功能，记住使用cursorActivity事件不要使用change事件，这是一个坑，那样页面直接会卡死
+		// 代码自动提示功能，记住使用inputRead事件不要使用change事件，这是一个坑，那样页面直接会卡死
 		editor.on('inputRead', function () {
 			editor.showHint()
 		})
+		// 每次代码编辑框的内容更新时，获取输入语句并赋值，这里要用that，不能使用this，具体原因可百度查询
 		editor.on('update', function () {
 			that.sqlfind.sql = editor.getValue()
 		})
@@ -461,15 +473,12 @@ export default {
 				  duration: 2000,
 				});
 			}else{
+				this.sqlfind.loading = true
 				this.table.pagenumber = pagenumber
 				this.table.loading = true
 				this.table.checkevents = ''
-				// var sql_temp = this.sqlfind.sql.replace(/\*/g,"#\*").replace(/from/ig,"#from").replace(/select/ig,"#select").replace(/\(/g,"#\(")
-				//将单引号 ' 都替换为url格式编码，即&#39;以便之后base64编码使用
-				var sql_temp = this.sqlfind.sql.replace(/\'/g,"&#39;")
-				if(sql_temp.indexOf("limit") == -1){
-					sql_temp += " limit 1000"
-				}
+				//发送前查询语句转换
+				var sql_temp = setString(this.sqlfind.sql)
 				//将已经勾选的游戏事件checkedevents里的数据拼接为字符串格式，中间用，隔开
 				if (this.eventscheck.checkedevents.length != 0){
 					for (var i = 0; i <this.eventscheck.checkedevents.length; i++){
@@ -491,6 +500,8 @@ export default {
 				this.$http.post(process.env.VUE_APP_BASE_API+'/game/checkdata',
 				data,{headers:{'uid':localStorage.getItem("uid"),'token':localStorage.getItem("token")}}
 				).then(function(res){
+					//查询完毕，不管结果如何，查询按钮的loading状态先去掉
+					this.sqlfind.loading = false
 					if (res.body.code == 0){
 						//data为空，则不需要进行其余操作，清除上一次的数据后，提示即可
 						if(res.body.data == null){
@@ -535,8 +546,8 @@ export default {
 				  type:'error'
 				});
 			}else{
-				//将单引号 ' 都替换为url格式编码，即&#39;以便之后base64编码使用
-				var sql_temp = this.sqlfind.sql.replace(/\'/g,"&#39;")
+				//发送参数时依然先进行参数处理
+				var sql_temp = setString(this.sqlfind.sql)
 				var data = {
 					title:this.dialogsave.name,
 					// db:'dana',
@@ -658,8 +669,9 @@ export default {
 		//打开sql语句操作
 		handleOpen:function(index,row){
 		
-			// 后端返回的是 base64编码过的，因此需要先解码，后将url格式的&#39; 全部替换成单引号
-			this.sqlfind.sql = Base64.decode(row.sqlstring).replace(/&#39;/g,"\'")
+			// 后端返回的是 base64编码过的，因此需要先解码，后将url格式的&#39; 全部替换成单引号，函数都写在另一个公用JS里，直接调用
+			this.sqlfind.sql = getString(Base64.decode(row.sqlstring))
+			//解码完成后，要赋值到codemirror的输入框，需要使用它们的setvalue函数
 			editor.setValue(this.sqlfind.sql)
 			this.dialogdetail.Visible = false
 			this.dialoghistorylist.Visible = false
@@ -789,10 +801,9 @@ export default {
 			})
 		},
 		//初始化sql语句的显示
-		formatsqlstring:function(row,colunm){
-			// return row.sqlstring.replace(/\?/g,"\'").replace(/#/g,"")
+		formatsqlstring:function(row,colunm){	
 			// 后端返回的是 base64编码过的，因此需要先解码，后将url格式的&#39; 全部替换成单引号
-			return Base64.decode(row.sqlstring).replace(/&#39;/g,"\'")
+			return getString(Base64.decode(row.sqlstring))
 		},
 		//前端分页 每页数据数切换
 		handleSizeChange:function(val){

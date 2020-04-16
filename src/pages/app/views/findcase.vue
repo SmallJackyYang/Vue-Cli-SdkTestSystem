@@ -225,7 +225,7 @@ export default {
 			//post请求
 			var data = {
 				pagesize : this.table.pagesize, //每页展示数
-				pagenumber : this.table.currentPage, //当前页数
+				pagenum : this.table.currentPage, //当前页数
 				title : this.formInline.casename, // 查询条件 - 用例名称
 				sdk_version : this.formInline.sdkver, //查询条件 - sdk版本号
 				device_id : this.formInline.did, //查询条件 - 设备ID
